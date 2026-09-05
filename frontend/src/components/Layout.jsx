@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { supabase } from '../supabaseClient';
-import api from '../api';
 import {
   LayoutDashboard, User, Salad, CalendarDays, Heart,
   DollarSign, Users, MessageSquare, LogOut, Globe,
-  Search, Bell, ChevronDown, X, Settings, UserCircle,
+  Search, Bell, ChevronDown, X, UserCircle,
   ShieldCheck, ExternalLink, ChevronRight, Menu
 } from 'lucide-react';
 
@@ -329,6 +328,38 @@ const Layout = () => {
           read: false,
         }));
 
+        // Food requests: only for listing owners or admins
+        const { data: requests } = await supabase
+          .from('food_requests')
+          .select(`
+            id, request_date,
+            users:user_id ( first_name, last_name ),
+            food_waste_data:food_id ( id, food_category, amount_wasted, user_id )
+          `)
+          .gte('request_date', since)
+          .order('request_date', { ascending: false })
+          .limit(10);
+
+        requests?.forEach(r => {
+          const isOwner = r.food_waste_data?.user_id === user?.id;
+          if (isOwner || isAdmin) {
+            const requester = r.users ? `${r.users.first_name} ${r.users.last_name || ''}`.trim() : 'Someone';
+            const cat = r.food_waste_data?.food_category || 'food';
+            const amt = r.food_waste_data?.amount_wasted;
+            seeds.push({
+              id: `req-${r.id}`,
+              type: 'request',
+              title: isOwner ? 'Your Food Was Requested!' : 'New Food Request',
+              message: isOwner
+                ? `${requester} requested your ${amt ? `${amt} KG of ` : ''}${cat}`
+                : `${requester} requested ${amt ? `${amt} KG of ` : ''}${cat}`,
+              time: r.request_date,
+              path: '/food-data',
+              read: false,
+            });
+          }
+        });
+
         // Sort by time desc
         seeds.sort((a, b) => new Date(b.time) - new Date(a.time));
         setNotifications(seeds);
@@ -387,16 +418,41 @@ const Layout = () => {
 
     const requestsSub = supabase
       .channel('notif-requests')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'food_requests' }, (payload) => {
-        addNotification({
-          id: `req-${payload.new.id}-${Date.now()}`,
-          type: 'request',
-          title: 'New Food Request',
-          message: `A user requested a food item`,
-          time: payload.new.created_at || new Date().toISOString(),
-          path: '/food-data',
-          read: false,
-        });
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'food_requests' }, async (payload) => {
+        try {
+          const { data: reqData } = await supabase
+            .from('food_requests')
+            .select(`
+              id, request_date,
+              users:user_id ( first_name, last_name ),
+              food_waste_data:food_id ( id, food_category, amount_wasted, user_id )
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (!reqData) return;
+
+          const isOwner = reqData.food_waste_data?.user_id === user?.id;
+          if (isOwner || isAdmin) {
+            const requester = reqData.users ? `${reqData.users.first_name} ${reqData.users.last_name || ''}`.trim() : 'Someone';
+            const cat = reqData.food_waste_data?.food_category || 'food';
+            const amt = reqData.food_waste_data?.amount_wasted;
+
+            addNotification({
+              id: `req-${payload.new.id}-${Date.now()}`,
+              type: 'request',
+              title: isOwner ? 'Your Food Was Requested!' : 'New Food Request',
+              message: isOwner
+                ? `${requester} requested your ${amt ? `${amt} KG of ` : ''}${cat}`
+                : `${requester} requested ${amt ? `${amt} KG of ` : ''}${cat}`,
+              time: payload.new.request_date || new Date().toISOString(),
+              path: '/food-data',
+              read: false,
+            });
+          }
+        } catch (err) {
+          console.error('Error handling food request notification:', err);
+        }
       })
       .subscribe();
 
@@ -406,7 +462,7 @@ const Layout = () => {
       supabase.removeChannel(foodSub);
       supabase.removeChannel(requestsSub);
     };
-  }, [addNotification]);
+  }, [addNotification, user?.id, isAdmin]);
 
   const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
