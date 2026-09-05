@@ -66,7 +66,7 @@ A huge portion of good, edible food produced daily is discarded into landfills, 
 ## Project Architecture
 
 ```
-Database-Project/
+ReFood/
 ├── api/                     # Vercel Serverless Function entrypoint
 │   └── index.js             # Wraps Express backend for serverless execution
 ├── backend/                 # Node.js Express REST API
@@ -114,8 +114,8 @@ Database-Project/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/FraggyKnowsCode/Database-Project.git
-cd Database-Project
+git clone https://github.com/FraggyKnowsCode/ReFood.git
+cd ReFood
 ```
 
 ---
