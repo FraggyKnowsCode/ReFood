@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import axios from 'axios';
+import api from '../api';
 
 const Register = () => {
   const { signIn } = useAuth();
@@ -34,8 +34,8 @@ const Register = () => {
       setLoading(true);
 
       // 1. Register via backend (admin API — no email confirmation needed)
-      await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/register`,
+      await api.post(
+        '/auth/register',
         {
           email: formData.email,
           password: formData.password,

@@ -10,6 +10,8 @@ frontend/dist/
 # Environment variables & secrets
 .env
 .env.*
+*.env
+Import.env
 backend/.env
 frontend/.env
 *.env.local

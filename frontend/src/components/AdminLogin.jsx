@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import axios from 'axios';
+import api from '../api';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -24,10 +24,9 @@ const AdminLogin = () => {
       if (!token) throw new Error('Authentication failed.');
 
       // Verify the user is actually an admin
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/me`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get('/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       if (!res.data?.is_admin) {
         // Sign them out immediately and show error

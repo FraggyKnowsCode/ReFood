@@ -5,13 +5,39 @@ const supabase = require('../supabaseClient');
 module.exports = (requireAuth, requireAdmin) => {
     // GET current user profile
     router.get('/me', requireAuth, async (req, res) => {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', req.user.id)
-            .single();
+            .maybeSingle();
 
         if (error) return res.status(500).json({ error: error.message });
+
+        if (!data) {
+            // If user doesn't have a profile row yet, initialize one with auth email
+            const newProfile = {
+                id: req.user.id,
+                email: req.user.email,
+                first_name: req.user.user_metadata?.first_name || req.user.email.split('@')[0],
+                last_name: req.user.user_metadata?.last_name || '',
+                phone: req.user.phone || req.user.user_metadata?.phone || '',
+                is_admin: false
+            };
+            const { data: created, error: insertError } = await supabase
+                .from('users')
+                .upsert([newProfile])
+                .select()
+                .single();
+            if (insertError) return res.status(500).json({ error: insertError.message });
+            return res.json(created);
+        }
+
+        // Ensure email always matches the authenticated account's email
+        if (data.email !== req.user.email) {
+            await supabase.from('users').update({ email: req.user.email }).eq('id', req.user.id);
+            data.email = req.user.email;
+        }
+
         res.json(data);
     });
 

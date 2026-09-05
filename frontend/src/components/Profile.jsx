@@ -12,15 +12,21 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         const res = await api.get('/users/me');
-        setProfile(res.data);
+        setProfile({
+          ...res.data,
+          email: user?.email || res.data?.email || ''
+        });
       } catch (err) {
         console.error('Failed to load profile', err);
+        if (user?.email) {
+          setProfile(prev => ({ ...prev, email: user.email }));
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchProfile();
-  }, []);
+  }, [user?.email]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -57,7 +63,7 @@ const Profile = () => {
         <form onSubmit={handleUpdate}>
           <div className="input-group">
             <label>Email Address</label>
-            <input type="email" value={profile.email} disabled style={{ opacity: 0.7 }} />
+            <input type="email" value={user?.email || profile.email || ''} disabled style={{ opacity: 0.7 }} />
             <small style={{ color: 'var(--text-secondary)' }}>Email cannot be changed.</small>
           </div>
 

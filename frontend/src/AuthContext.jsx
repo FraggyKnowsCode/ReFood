@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
-import axios from 'axios';
+import api from './api';
 
 const AuthContext = createContext();
 
@@ -14,14 +14,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/me`,
-        { headers: { Authorization: `Bearer ${session.access_token}` } }
-      );
-      setProfile(res.data);
+      const res = await api.get('/users/me');
+      setProfile({
+        ...res.data,
+        email: authUser.email || res.data?.email
+      });
     } catch (err) {
       console.error('Could not fetch user profile:', err.message);
-      setProfile(null);
+      setProfile({ email: authUser.email });
     }
   };
 
