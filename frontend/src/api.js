@@ -15,8 +15,17 @@ export const invalidateCache = (urlPattern) => {
 };
 
 // ── Axios instance ────────────────────────────────────────────────────────
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (import.meta.env.DEV) {
+    const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    return `http://${host}:5000/api`;
+  }
+  return '/api';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api'),
+  baseURL: getBaseUrl(),
 });
 
 // Attach Supabase JWT to every request
