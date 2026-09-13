@@ -163,14 +163,25 @@ CREATE TABLE feedback (
 );
 
 -- ------------------------------------------------------------
--- STEP 10: Disable Row Level Security on all tables
+-- STEP 10: Enable Row Level Security on all tables
 -- Security is enforced at the Node.js/Express layer via
--- Supabase JWT validation (requireAuth / requireAdmin middleware).
+-- Supabase JWT validation (requireAuth / requireAdmin middleware)
+-- for all WRITE operations.
+-- We enable RLS and add READ-ONLY policies for public access
+-- to prevent unauthorized modifications directly from the frontend.
 -- ------------------------------------------------------------
-ALTER TABLE users               DISABLE ROW LEVEL SECURITY;
-ALTER TABLE reduction_programs  DISABLE ROW LEVEL SECURITY;
-ALTER TABLE cost_management     DISABLE ROW LEVEL SECURITY;
-ALTER TABLE donations           DISABLE ROW LEVEL SECURITY;
-ALTER TABLE food_waste_data     DISABLE ROW LEVEL SECURITY;
-ALTER TABLE food_requests       DISABLE ROW LEVEL SECURITY;
-ALTER TABLE feedback            DISABLE ROW LEVEL SECURITY;
+ALTER TABLE users               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reduction_programs  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cost_management     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE donations           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE food_waste_data     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE food_requests       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE feedback            ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read access to users" ON users FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to reduction_programs" ON reduction_programs FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to cost_management" ON cost_management FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to donations" ON donations FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to food_waste_data" ON food_waste_data FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to food_requests" ON food_requests FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to feedback" ON feedback FOR SELECT USING (true);

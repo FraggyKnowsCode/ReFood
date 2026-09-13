@@ -1,9 +1,30 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const compression = require('compression');
 require('dotenv').config();
 const supabase = require('./supabaseClient');
 
 const app = express();
+
+// Enable proxy trust for reverse proxies (like Vercel or Render)
+app.set('trust proxy', 1);
+
+// Security Headers
+app.use(helmet());
+
+// Response Compression (reduces bandwidth, improves scale)
+app.use(compression());
+
+// Global Rate Limiting (prevents DDoS / Brute Force)
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // limit each IP to 200 requests per windowMs
+    message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api', limiter);
+
 app.use(cors());
 app.use(express.json());
 
