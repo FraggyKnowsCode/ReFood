@@ -100,6 +100,11 @@ CREATE TABLE donations (
     donor_email     VARCHAR(255) NOT NULL,
     amount          NUMERIC(10,2) NOT NULL,
     payment_method  VARCHAR(50)  NOT NULL,
+    transaction_id  VARCHAR(255),
+    mobile_provider VARCHAR(50),
+    bank_name       VARCHAR(100),
+    account_last4   VARCHAR(4),
+    status          VARCHAR(20)  DEFAULT 'pending',
     donation_date   TIMESTAMPTZ  DEFAULT NOW()
 );
 
